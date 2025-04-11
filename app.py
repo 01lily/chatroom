@@ -8,13 +8,20 @@ from Crypto.Hash import HMAC, SHA256
 import base64
 import spacy
 import os
+from spacy.cli import download # BUG FIX
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key'
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 # Load spaCy model
-nlp = spacy.load("en_core_web_sm")
+#nlp = spacy.load("en_core_web_sm") ORIGINAL LINE // BUG FIX
+
+try:
+    nlp = spacy.load("en_core_web_sm")
+except OSError:
+    download("en_core_web_sm")
+    nlp = spacy.load("en_core_web_sm")
 
 # In-memory user session tracking
 users = {}
