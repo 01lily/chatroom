@@ -4,4 +4,3 @@ pycryptodome
 spacy
 eventlet
 gunicorn
-en-core-web-sm
