@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Secure Chatroom</title>
+  <script src="https://cdn.socket.io/4.3.2/socket.io.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f0f4f8;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+      margin: 0;
+    }
+
+    h2 {
+      margin-bottom: 10px;
+      color: #2c3e50;
+    }
+
+    #chat {
+      width: 90%;
+      max-width: 600px;
+      height: 400px;
+      overflow-y: auto;
+      background-color: white;
+      border: 1px solid #ccc;
+      padding: 10px;
+      margin-bottom: 10px;
+      border-radius: 8px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+    }
+
+    #chat p {
+      margin: 5px 0;
+    }
+
+    #input-area {
+      width: 90%;
+      max-width: 600px;
+      display: flex;
+      gap: 10px;
+    }
+
+    #msg {
+      flex: 1;
+      padding: 10px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+
+    button {
+      padding: 10px 20px;
+      font-size: 14px;
+      background-color: #3498db;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #2980b9;
+    }
+
+    #typing {
+      font-size: 12px;
+      color: #888;
+      font-style: italic;
+      margin-bottom: 8px;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>🔒 Secure Chatroom</h2>
+  <div id="chat"></div>
+  <div id="typing"></div>
+
+  <div id="input-area">
+    <input id="msg" type="text" placeholder="Type your message 😊..." autocomplete="off" />
+    <button onclick="sendMessage()">Send</button>
+  </div>
+
+  <script>
+    var socket = io();
+    var username = prompt("Enter a username") || "Anonymous";
+
+    socket.emit('join', { username: username });
+
+    socket.on('status', function(data) {
+      addMessage(`<em>${data.msg}</em>`);
+    });
+
+    socket.on('message', function(data) {
+      const time = new Date().toLocaleTimeString();
+      addMessage(`${data.msg} <span style="font-size: 11px; color: gray;">[${time}]</span>`);
+    });
+
+    socket.on('typing', function(data) {
+      document.getElementById("typing").textContent = data.msg;
+    });
+
+    socket.on('stopTyping', function() {
+      document.getElementById("typing").textContent = '';
+    });
+
+    socket.on('warning', function(data) {
+      alert(data.msg);
+    });
+
+    function sendMessage() {
+      var msgInput = document.getElementById("msg");
+      var msg = msgInput.value.trim();
+      if (msg === "") return;
+      socket.emit('message', { message: msg });
+      msgInput.value = "";
+      socket.emit('stopTyping');
+    }
+
+    function addMessage(html) {
+      var chat = document.getElementById("chat");
+      chat.innerHTML += "<p>" + html + "</p>";
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    var msgInput = document.getElementById("msg");
+
+    msgInput.addEventListener("input", function() {
+      if (msgInput.value.trim() !== "") {
+        socket.emit('typing', { msg: `${username} is typing...` });
+      } else {
+        socket.emit('stopTyping');
+      }
+    });
+
+    msgInput.addEventListener("blur", function() {
+      socket.emit('stopTyping');
+    });
+  </script>
+
+</body>
+</html>
